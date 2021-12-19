@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>ESP32 ULP coprocessor emulator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <style>
+        html,body {
+            height: 100%;
+        }
+        .ace_gutter-cell.ace_breakpoint{ 
+            border-radius: 20px 0px 0px 20px;
+            /* Change the color of the breakpoint if you want */
+            box-shadow: 0px 0px 1px 1px #248c46 inset; 
+        }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="javascript/common/RequireMock.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/common/NamespaceUtils.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/common/infrastructure/bus/Bus.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="javascript/esp32/Topics.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/Editor.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/Parser.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="javascript/esp32/coprocessor/Memory.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/Register.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/StageCountRegister.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/Coprocessor.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/commands/AbstractAddSubCommand.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/commands/MoveCommand.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/commands/AddCommand.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/coprocessor/commands/SubCommand.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script src="javascript/esp32/ui/IntegerUiElement.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/ui/RegisterUiElement.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/ui/FlagUiElement.js" type="text/javascript" charset="utf-8"></script>
+    <script src="javascript/esp32/ui/MessagesElement.js" type="text/javascript" charset="utf-8"></script>
+    
+    <script>
+        assertNamespace('esp32');
+        esp32.bus = new common.infrastructure.bus.Bus();
+        
+        $(document).ready(() => {
+            new esp32.coprocessor.Coprocessor();
+            new esp32.Parser();
+            new esp32.Editor('editor');
+            
+            for (var i = 0; i < 4; i++) {
+                new esp32.ui.RegisterUiElement('#coprocessor #registers #r' + i, 'r' + i);
+            }
+            new esp32.ui.RegisterUiElement('#coprocessor #registers #stage_cnt', 'stage_cnt');
+
+            new esp32.ui.FlagUiElement('#coprocessor #flags #zero', 'zero');
+            new esp32.ui.FlagUiElement('#coprocessor #flags #overflow', 'overflow');
+            new esp32.ui.IntegerUiElement('#coprocessor #nextCommandIndex', esp32.topics.coprocessor.nextCommandIndex);
+            new esp32.ui.MessagesElement('#messages');
+
+            $('#nextButton').on('click', () => esp32.bus.sendCommand(esp32.topics.coprocessor.executeNextCommand, {}));
+            $('#resetButton').on('click', () => esp32.bus.sendCommand(esp32.topics.coprocessor.reset, {}));
+        });
+    </script>
+</head>
+
+<body>
+
+<nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">ESP32 ULP Coprocessor emulator</a>
+    </div>
+</nav>
+
+<div class="container m-3" style="height: 85%">
+    <div class="row w-100" style="height: 80%">
+        <div class="col-auto h-100" id="coprocessor">
+            <table class="table" id="registers">
+                <thead>
+                    <tr>
+                        <th scope="col">register</th>
+                        <th scope="col">value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">R0</th>
+                        <td id="r0">0</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">R1</th>
+                        <td id="r1">0</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">R2</th>
+                        <td id="r2">0</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">R3</th>
+                        <td id="r3">0</td>
+                    </tr>  
+                    <tr>
+                        <th scope="row">stage_cnt</th>
+                        <td id="stage_cnt">0</td>
+                    </tr>  
+                </tbody>
+            </table>
+
+            <table class="table" id="flags">
+                <thead>
+                    <tr>
+                        <th scope="col">flag</th>
+                        <th scope="col">value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row">zero</th>
+                        <td id="zero">false</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">overflow</th>
+                        <td id="overflow">false</td>
+                    </tr>
+                </tbody>
+            </table>
+                
+            <p>next command index: <span id="nextCommandIndex"></span></p>
+            <button type="button" id="nextButton" class="btn btn-primary">execute next command</button>
+            <button type="button" id="resetButton" class="btn btn-primary">reset coprocessor</button>
+        </div>
+        <div id="editor" class="col h-100"></div>
+    </div>
+    <div class="row w-100" style="height: 20%">
+        <div class="col">
+            <textarea placeholder="messages" id="messages" class="w-100 h-75 m-2"></textarea>
+        </div>
+    </div>
+</div>
+    
+</body>
+</html>
