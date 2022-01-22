@@ -4,7 +4,6 @@ esp32.coprocessor.commands.AbstractAddSubCommand = function AbstractAddSubComman
    this.type         = 'command';
    this.description  = keyword;
    
-   //var regex = /^add r([0-3]), r([0-3]), (((-?[0-9]+)|(-?0x[0-9a-f]+))|r([0-3]))$/;
    var regex = new RegExp('^' + keyword + ' r([0-3]), r([0-3]), (((-?[0-9]+)|(-?0x[0-9a-f]+))|r([0-3]))$');
 
    var matchResult = line.match(regex);
@@ -34,9 +33,9 @@ esp32.coprocessor.commands.AbstractAddSubCommand = function AbstractAddSubComman
    this.execute = function execute(coprocessor) {
       var value1 = coprocessor.getRegister(this.sourceRegister1);
       var value2 = (this.immediateValue === undefined) ? coprocessor.getRegister(this.sourceRegister2) : this.immediateValue;
-      var sum    = this.calculate(value1, value2);
-      coprocessor.setRegister(this.destinationRegister, sum % 65536);
-      coprocessor.setZeroFlag(sum === 0);
-      coprocessor.setOverflowFlag(sum > 65535 || sum < 0);
+      var result = this.calculate(value1, value2);
+      coprocessor.setRegister(this.destinationRegister, result % 65536);
+      coprocessor.setZeroFlag(result === 0);
+      coprocessor.setOverflowFlag(result > 65535 || result < 0);
    };
 };

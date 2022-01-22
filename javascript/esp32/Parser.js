@@ -4,7 +4,10 @@ esp32.Parser = function Parser() {
 
    var MEMORY_WORD_CONSTRUCTORS  = [ esp32.coprocessor.commands.MoveCommand,
                                      esp32.coprocessor.commands.AddCommand,
-                                     esp32.coprocessor.commands.SubCommand];
+                                     esp32.coprocessor.commands.SubCommand,
+                                     esp32.coprocessor.commands.AndCommand,
+                                     esp32.coprocessor.commands.OrCommand,
+                                     esp32.coprocessor.commands.LeftShiftCommand];
   
    var publishErrorMessage = function publishErrorMessage(message) {
       esp32.bus.publish(esp32.topics.parser.state, {errorMessage: message});
